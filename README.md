@@ -1,11 +1,17 @@
-# Atividade Individual (Sprint 01) - Blockchain Simples
+# Atividade Individual - Blockchain
 
-Projeto referente a Sprint 01 do programa de estágio da Compass UOL.
+Continuação do projeto da Blockchain com novas funções.
 
 Foi implementado em Javascript uma blockchain básica. Ela cria uma cadeia simples de blocos, onde cada bloco contém dados de transações. A blockchain garante a integridade dos dados por meio da função hash e fornece funcionalidades para adicionar blocos e validar toda a cadeia.
 
 ---
 
+## Novidades
+
+* Adicionado um Menu para que o usuário possa navegar com mais comodidade;
+* Mineração: Implementação simples do "Proof of Work", que exige que o hash do bloco comece com uma certa quantidade de zeros para ser considerado válido (definido pelo usuário dentro do código);
+* Validação de endereços: Agora, a blockchain inclui uma validação de formato para os endereços de **origem** e **destino** nas transações, garantindo que sigam o padrão esperado;
+* 
 ## Como utilizar/rodar o projeto
 
 Para utilizar este projeto:
@@ -17,7 +23,15 @@ Para utilizar este projeto:
 git clone https://github.com/SavioSayke/Atividade01_CompassUOL.git
 ```
 
-3. Em seguida, navegue até o diretório dos arquivos pelo seu terminal e faça a instalação dos seguintes módulos abaixo:
+3. Após clonar o repositório, navegue até o diretório dos arquivos pelo seu terminal. Abra seu terminal dentro do diretório do projeto:
+    * Para abrir o terminal, navegue até o diretório onde o projeto foi salvo, agora: **segure Shift + botão direito do mouse**. Selecione "Abrir o terminal" ou abra o terminal de sua preferência.
+
+4.  Acesse a branch **blockchainV2**:
+```
+git checkout blockchainV2
+```
+
+1. Em seguida, pelo seu terminal, faça a instalação dos seguintes módulos abaixo:
 ```bash
 npm install crypto-js
 ```
@@ -25,7 +39,7 @@ npm install crypto-js
 npm install date-fns
 ```
 
-4. Execute o script utilizando.
+1. Execute o script utilizando.
 ```bash
 node blockchain.js
 ```
