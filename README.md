@@ -11,7 +11,8 @@ Foi implementado em Javascript uma blockchain básica. Ela cria uma cadeia simpl
 * Adicionado um Menu para que o usuário possa navegar com mais comodidade;
 * Mineração: Implementação simples do "Proof of Work", que exige que o hash do bloco comece com uma certa quantidade de zeros para ser considerado válido (definido pelo usuário dentro do código);
 * Validação de endereços: Agora, a blockchain inclui uma validação de formato para os endereços de **origem** e **destino** nas transações, garantindo que sigam o padrão esperado;
-* 
+* Histório de transações: Agora é possível consultar o histório de transações associado a um determinado endereço.
+
 ## Como utilizar/rodar o projeto
 
 Para utilizar este projeto:
