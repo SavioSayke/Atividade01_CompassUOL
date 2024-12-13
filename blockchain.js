@@ -2,14 +2,33 @@ const CryptoJS = require('crypto-js');
 const Block = require('./block');
 
 class Blockchain {
-    constructor(difficulty = 4) {
+    constructor(difficulty = 3) {
         this.difficulty = difficulty;
         this.chain = [this.createGenesisBlock()];
+        this.networkNodes = [];
+        this.balances = {};
+        this.reward = 0;
+        this.balances["yke0000000"] = 1000000;
     }
 
     createGenesisBlock() {
-        return new Block(0, Date.now(), "Genesis Block", "0", this.calculateHash(0, "0", Date.now(), "Genesis Block", 0), 0);
-    }
+        const genesisData = { from: "system", to: "miner", value: 0 };
+        const genesisBlock = new Block(
+            0,
+            Date.now(),
+            genesisData,
+            "0",
+            this.calculateHash(0, "0", Date.now(), genesisData, 0),
+            0
+        );
+    
+        if (!this.balances) this.balances = {};
+    
+        this.balances["miner"] = this.reward;
+        this.balances["yke0000000"] = 1000000;
+    
+        return genesisBlock;
+    }    
 
     calculateHash(index, previousHash, timestamp, data, nonce) {
         return CryptoJS.SHA256(index + previousHash + timestamp + JSON.stringify(data) + nonce).toString();
@@ -26,35 +45,92 @@ class Blockchain {
             hash = this.calculateHash(index, previousHash, timestamp, data, nonce);
         }
 
-        return {hash, nonce};
+        return { hash, nonce };
     }
 
     isValidAddress(address) {
-        return /^yke[a-fA-F0-9]{47}$/.test(address);
+        return /^yke[a-fA-F0-9]{7}$/.test(address);
     }
 
     addBlock(data) {
-        const {from, to, value} = data;
-        if (!this.isValidAddress(from) || !this.isValidAddress(to)) {
+        const { from, to, value, fee = 0 } = data;
+
+        if (!this.balances) this.balances = {};
+        if (!(from in this.balances)) this.balances[from] = 0;
+        if (!(to in this.balances)) this.balances[to] = 0;
+
+        if (this.balances[from] < value + fee) {
             console.log();
-            console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
-            console.log("X Endereço inválido. Transação rejeitada. X");
-            console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+            console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
+            console.log("X Saldo insuficiente. Transação rejeitada. X");
+            console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
             return;
         }
 
-        const previousBlock = this.chain[this.chain.length - 1];
+        const previousBlock = this.getLatestBlock();
         const index = previousBlock.index + 1;
         const timestamp = Date.now();
 
-        const {hash, nonce} = this.mineBlock(index, previousBlock.hash, timestamp, data);
+        const { hash, nonce } = this.mineBlock(index, previousBlock.hash, timestamp, data);
 
         const newBlock = new Block(index, timestamp, data, previousBlock.hash, hash, nonce);
         this.chain.push(newBlock);
+
+        this.updateBalances(data);
         console.log();
         console.log('✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓');
         console.log("✓ Bloco adicionado com sucesso! ✓");
         console.log('✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓');
+    }
+
+    updateBalances(data) {
+        //console.log('Estado anterior de balances:', this.balances);
+
+        const { from, to, value, fee = 0 } = data;
+
+        this.balances[from] = this.balances[from] || 0;
+        this.balances[to] = this.balances[to] || 0;
+        this.balances['miner'] = this.balances['miner'] || 0;
+
+        this.balances[from] -= (value + fee);
+        this.balances[to] += value;
+        this.balances['miner'] += this.reward + fee;
+
+        //console.log('Estado atual de balances:', this.balances);
+    }
+
+    propagateBlock(block) {
+        this.networkNodes.forEach((node) => {
+            const lastBlock = node.getLatestBlock();
+            if (lastBlock.index + 1 === block.index && lastBlock.hash === block.previousHash) {
+                node.chain.push(block);
+                console.log(`Bloco propagado para um nó com sucesso!`);
+            } else {
+                console.log(`Conflito detectado ao propagar bloco.`);
+            }
+        });
+    }
+
+    receiveBlock(block) {
+        if (block.index === this.getLatestBlock().index + 1 && block.previousHash === this.getLatestBlock().hash) {
+            this.chain.push(block);
+            console.log("Bloco recebido e adicionado à cadeia.");
+        } else {
+            console.log("Conflito detectado. Verificando cadeias...");
+            this.resolveConflicts();
+        }
+    }
+
+    resolveConflicts() {
+        const chains = this.networkNodes.map(node => node.chain);
+        chains.push(this.chain);
+
+        const longestChain = chains.reduce((a, b) => (a.length > b.length ? a : b), []);
+
+        if (longestChain !== this.chain) {
+            this.chain = longestChain;
+            console.log("Conflito resolvido. Cadeia mais longa adotada.");
+        }
     }
 
     getLatestBlock() {
@@ -81,6 +157,12 @@ class Blockchain {
         return this.chain
             .map(block => block.data)
             .filter(data => data.from === address || data.to === address);
+    }
+
+    getAddressInfo(address) {
+        const balance = this.balances[address] || 0;
+        const transactions = this.getTransactionHistory(address);
+        return { balance, transactions };
     }
 }
 
