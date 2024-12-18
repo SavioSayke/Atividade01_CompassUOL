@@ -101,35 +101,35 @@ class Blockchain {
 
     propagateBlock(block) {
         this.networkNodes.forEach((node) => {
-            const lastBlock = node.getLatestBlock();
-            if (lastBlock.index + 1 === block.index && lastBlock.hash === block.previousHash) {
-                node.chain.push(block);
-                console.log(`Bloco propagado para um nó com sucesso!`);
-            } else {
-                console.log(`Conflito detectado ao propagar bloco.`);
-            }
+            node.receiveBlock(block);
         });
     }
 
     receiveBlock(block) {
-        if (block.index === this.getLatestBlock().index + 1 && block.previousHash === this.getLatestBlock().hash) {
+        const latestBlock = this.getLatestBlock();
+
+        if (block.index === latestBlock.index + 1 && block.previousHash === latestBlock.hash) {
             this.chain.push(block);
-            console.log("Bloco recebido e adicionado à cadeia.");
+            console.log(`Bloco recebido e adicionado à cadeia no nó.`);
         } else {
-            console.log("Conflito detectado. Verificando cadeias...");
+            console.log(`Conflito detectado. Resolvendo cadeia...`);
             this.resolveConflicts();
         }
     }
 
     resolveConflicts() {
-        const chains = this.networkNodes.map(node => node.chain);
+        const chains = this.networkNodes.map((node) => node.chain);
         chains.push(this.chain);
 
-        const longestChain = chains.reduce((a, b) => (a.length > b.length ? a : b), []);
+        const longestChain = chains.reduce((longest, current) =>
+            current.length > longest.length ? current : longest, this.chain
+        );
 
-        if (longestChain !== this.chain) {
+        if (this.chain !== longestChain) {
             this.chain = longestChain;
             console.log("Conflito resolvido. Cadeia mais longa adotada.");
+        } else {
+            console.log("Cadeia local já é a mais longa.");
         }
     }
 
